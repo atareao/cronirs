@@ -1,9 +1,12 @@
 use tokio_cron_scheduler::{JobScheduler, Job};
 use dotenv::dotenv;
 use std::{env, fs};
+use chrono::prelude::*;
 
 #[tokio::main]
 async fn main() {
+    println!("Starting croni");
+    println!("==============");
     dotenv().ok();
     let crontab_path = env::var("CRONTAB").expect("Crontab not found");
     let crontab = read_crontab(&crontab_path);
@@ -25,7 +28,8 @@ async fn call(url: &str) -> Result<String, reqwest::Error>{
     let response = reqwest::get(url)
         .await?
         .status();
-    println!("{}: {}", url, response);
+    let local: DateTime<Local> = Local::now();
+    println!("{} | {} => {}", local.to_rfc3339(), url, response);
     Ok(response.to_string())
 }
 
