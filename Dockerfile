@@ -38,7 +38,10 @@ RUN cargo build  --target x86_64-unknown-linux-musl --release
 ###############################################################################
 FROM alpine:3.15
 
-RUN apk --update --no-cache add tini && \
+RUN apk add --update --no-cache \
+            tini~=0.19 \
+            tzdata~=2022a && \
+    rm -rf /var/cache/apk && \
     rm -rf /var/lib/app/lists*
 # Copy the user
 COPY --from=builder /etc/passwd /etc/group /etc/shadow /etc/
@@ -51,7 +54,6 @@ USER dockerus
 
 # Copy our build
 COPY --chown=dockerus:dockerus --from=builder /app/target/x86_64-unknown-linux-musl/release/croni /app/
-
 
 ENTRYPOINT ["tini", "--"]
 CMD ["/app/croni"]
