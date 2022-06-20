@@ -15,6 +15,7 @@ ENV OPENSSL_INCLUDE_DIR="/usr/include/openssl"
 RUN rustup target add x86_64-unknown-linux-musl && \
     apt-get update && \
     apt-get install -y \
+        --no-install-recommends\
         pkg-config \
         musl-tools \
         build-essential \
@@ -23,8 +24,6 @@ RUN rustup target add x86_64-unknown-linux-musl && \
         pkg-config \
         libssl-dev \
         && \
-    addgroup --gid ${GID} --system dockerus && \
-    adduser --uid ${UID} --system --home /app --ingroup dockerus --disabled-password dockerus && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -36,24 +35,21 @@ RUN cargo build  --target x86_64-unknown-linux-musl --release
 ###############################################################################
 ## Final image
 ###############################################################################
-FROM alpine:3.15
+FROM alpine:3.16
 
 RUN apk add --update --no-cache \
-            tini~=0.19 \
-            tzdata~=2022a && \
+            su-exec~=0.2-r1 \
+            tzdata~=2022a-r0 && \
     rm -rf /var/cache/apk && \
     rm -rf /var/lib/app/lists*
 # Copy the user
-COPY --from=builder /etc/passwd /etc/group /etc/shadow /etc/
 
 # Set the work dir
 WORKDIR /app
 
-# Use an unprivileged user.
-USER dockerus
-
+COPY entrypoint.sh /app/
 # Copy our build
-COPY --chown=dockerus:dockerus --from=builder /app/target/x86_64-unknown-linux-musl/release/croni /app/
+COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/croni /app/
 
-ENTRYPOINT ["tini", "--"]
+ENTRYPOINT ["/bin/sh", "/app/entrypoint.sh"]
 CMD ["/app/croni"]
