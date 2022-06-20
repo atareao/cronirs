@@ -5,8 +5,6 @@ FROM rust:latest AS builder
 
 LABEL maintainer="Lorenzo Carbonell <a.k.a. atareao> lorenzo.carbonell.cerezo@gmail.com"
 
-ARG UID=${UID:-1000}
-ARG GID=${GID:-1000}
 ARG TARGET=x86_64-unknown-linux-musl
 ENV RUST_MUSL_CROSS_TARGET=$TARGET
 ENV OPENSSL_LIB_DIR="/usr/lib/x86_64-linux-gnu"
