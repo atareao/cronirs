@@ -1,7 +1,8 @@
 use tokio_cron_scheduler::{JobScheduler, Job};
 use dotenv::dotenv;
-use std::{env, fs};
+use std::{env, fs, collections::VecDeque, process::Stdio};
 use chrono::prelude::*;
+use tokio::process::Command;
 
 #[tokio::main]
 async fn main() {
@@ -12,11 +13,12 @@ async fn main() {
     let crontab = read_crontab(&crontab_path);
     let mut sched = JobScheduler::new();
     for line in crontab{
-        let (schedule_str, url) = get_data(&line);
+        let (schedule_str, command) = get_data(&line);
         let async_job = Job::new(&schedule_str, move |_, _| {
-            let clone_url: String = url.clone();
+            let command_clone: String = command.clone();
             tokio::spawn(async move{
-                let _result = call(&clone_url).await;
+                let result = call(&command_clone).await;
+                println!("{}", result);
             });
         }).unwrap();
         let _result = sched.add(async_job);
@@ -24,13 +26,22 @@ async fn main() {
     let _result = sched.start().await;
 }
 
-async fn call(url: &str) -> Result<String, reqwest::Error>{
-    let response = reqwest::get(url)
-        .await?
-        .status();
-    let local: DateTime<Local> = Local::now();
-    println!("{} | {} => {}", local.to_rfc3339(), url, response);
-    Ok(response.to_string())
+async fn call(command_line: &str) -> String{
+    println!("{}", &command_line);
+    let mut cwa: VecDeque<&str> = command_line.split(" ").collect();
+    let command = cwa.pop_front().unwrap();
+    println!("{}", &command);
+    println!("{:?}", &cwa);
+    let output = Command::new(&command)
+        .args(cwa)
+        .output()
+        .await
+        .expect(&format!("Failed to run {}", &command));
+    format!("Status: {}\nOutput: {}\nError: {}\n",
+        output.status,
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    )
 }
 
 fn get_data(line: &str) -> (String, String){
