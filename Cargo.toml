@@ -8,7 +8,5 @@ edition = "2021"
 [dependencies]
 tokio = { version = "1.17", features = ["full"] }
 tokio-cron-scheduler = "0.5"
-reqwest = { version = "0.11", features = ["blocking"] }
 dotenv = "0.15"
 chrono = { version = "0.4", features = ["serde"] }
-openssl = { version = "0.10", features = ["vendored"] }
