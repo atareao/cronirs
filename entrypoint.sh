@@ -26,6 +26,9 @@ set -o errexit
 set -o pipefail
 set -o nounset
 
+LOCAL_USER_ID=${LOCAL_USER_ID:-1000}
+LOCAL_GROUP_ID=${LOCAL_GROUP_ID:-1000}
+
 if ! grep -q -E "^dockerus:" /etc/group;
 then
     echo "=== Create group ==="

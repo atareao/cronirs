@@ -36,8 +36,9 @@ RUN cargo build  --target x86_64-unknown-linux-musl --release
 FROM alpine:3.16
 
 RUN apk add --update --no-cache \
-            su-exec~=0.2-r1 \
-            tzdata~=2022a-r0 && \
+            su-exec~=0.2 \
+            curl~=7.83 \
+            tzdata~=2022 && \
     rm -rf /var/cache/apk && \
     rm -rf /var/lib/app/lists*
 # Copy the user
@@ -47,7 +48,7 @@ WORKDIR /app
 
 COPY entrypoint.sh /app/
 # Copy our build
-COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/croni /app/
+COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/cronirs /app/
 
 ENTRYPOINT ["/bin/sh", "/app/entrypoint.sh"]
-CMD ["/app/croni"]
+CMD ["/app/cronirs"]
