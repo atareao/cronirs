@@ -1,6 +1,6 @@
 [package]
 name = "cronirs"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "MIT"
 authors = ["Lorenzo Carbonell <lorenzo.carbonell.cerezo@gmail.com>"]
@@ -11,5 +11,7 @@ rust-version = "1.64"
 [dependencies]
 tokio = { version = "1.17", features = ["full"] }
 tokio-cron-scheduler = "0.5"
-dotenv = "0.15"
-chrono = { version = "0.4", features = ["serde"] }
+
+# log
+log = "0.4"
+simplelog = "0.11"
