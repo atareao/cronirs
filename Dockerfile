@@ -3,14 +3,24 @@
 ###############################################################################
 FROM rust:latest AS builder
 
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
+RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM" > /log
+
 LABEL maintainer="Lorenzo Carbonell <a.k.a. atareao> lorenzo.carbonell.cerezo@gmail.com"
 
-ARG TARGET=x86_64-unknown-linux-musl
-ENV RUST_MUSL_CROSS_TARGET=$TARGET
-ENV OPENSSL_LIB_DIR="/usr/lib/x86_64-linux-gnu"
-ENV OPENSSL_INCLUDE_DIR="/usr/include/openssl"
+COPY ./platform.sh /platform.sh
+RUN /platform.sh
 
-RUN rustup target add x86_64-unknown-linux-musl && \
+ENV RUST_MUSL_CROSS_TARGET=$TARGETPLATFORM
+#ENV OPENSSL_LIB_DIR="$(cat /.libdir)"
+#ENV OPENSSL_INCLUDE_DIR="/usr/include/openssl"
+# ARG TARGET=x86_64-unknown-linux-musl
+# ENV RUST_MUSL_CROSS_TARGET=$TARGET
+# ENV OPENSSL_LIB_DIR="/usr/lib/x86_64-linux-gnu"
+# ENV OPENSSL_INCLUDE_DIR="/usr/include/openssl"
+
+RUN rustup target add $(cat /.target) && \
     apt-get update && \
     apt-get install -y \
         --no-install-recommends\
@@ -25,20 +35,20 @@ RUN rustup target add x86_64-unknown-linux-musl && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+COPY Cargo.toml Cargo.lock ./
+COPY src src
 
-COPY ./ .
-
-RUN cargo build  --target x86_64-unknown-linux-musl --release
+RUN cargo build --release --target $(cat /.target) && \
+    cp /app/target/$(cat /.target)/release/cronirs /app/cronirs
 
 ###############################################################################
 ## Final image
 ###############################################################################
-FROM alpine:3.16
+FROM alpine:3.17
 
 RUN apk add --update --no-cache \
             su-exec~=0.2 \
-            curl~=7.83 \
-            tzdata~=2022 && \
+            curl~=7.87 && \
     rm -rf /var/cache/apk && \
     rm -rf /var/lib/app/lists*
 # Copy the user
@@ -48,7 +58,7 @@ WORKDIR /app
 
 COPY entrypoint.sh /app/
 # Copy our build
-COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/cronirs /app/
+COPY --from=builder /app/cronirs /app/
 
 ENTRYPOINT ["/bin/sh", "/app/entrypoint.sh"]
 CMD ["/app/cronirs"]
