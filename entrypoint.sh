@@ -42,7 +42,6 @@ then
 fi
 echo "=== Chown ownership ==="
 # comment next line if needs root
-chown dockerus:dockerus /usr/sbin/crond
 chown -R dockerus:dockerus /app
 echo "=== Execute $* ==="
 # comment next line if needs root

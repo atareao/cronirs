@@ -13,12 +13,6 @@ COPY ./platform.sh /platform.sh
 RUN /platform.sh
 
 ENV RUST_MUSL_CROSS_TARGET=$TARGETPLATFORM
-#ENV OPENSSL_LIB_DIR="$(cat /.libdir)"
-#ENV OPENSSL_INCLUDE_DIR="/usr/include/openssl"
-# ARG TARGET=x86_64-unknown-linux-musl
-# ENV RUST_MUSL_CROSS_TARGET=$TARGET
-# ENV OPENSSL_LIB_DIR="/usr/lib/x86_64-linux-gnu"
-# ENV OPENSSL_INCLUDE_DIR="/usr/include/openssl"
 
 RUN rustup target add $(cat /.target) && \
     apt-get update && \
