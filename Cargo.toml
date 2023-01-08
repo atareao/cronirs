@@ -10,7 +10,7 @@ rust-version = "1.64"
 
 [dependencies]
 tokio = { version = "1.17", features = ["full"] }
-tokio-cron-scheduler = "0.5"
+tokio-cron-scheduler = "0.8"
 
 # log
 log = "0.4"

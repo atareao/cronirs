@@ -2,32 +2,36 @@ use tokio_cron_scheduler::{JobScheduler, Job};
 use std::{env, fs, collections::VecDeque, str::FromStr};
 use tokio::process::Command;
 use simplelog::{SimpleLogger, Config, LevelFilter};
-use log::{info, debug};
+use log::{info, debug, error};
 
 #[tokio::main]
 async fn main() {
-    let log_level: LevelFilter = LevelFilter::from_str(&env::var("LOG_LEVEL")
-        .unwrap_or("info".to_string())).unwrap_or(LevelFilter::Info);
-    let _ = SimpleLogger::init(log_level, Config::default());
+    let log_level = env::var("LOG_LEVEL").unwrap_or("info".to_string());
+    let level_filter: LevelFilter = LevelFilter::from_str(&log_level).unwrap_or(LevelFilter::Info);
+    let _ = SimpleLogger::init(level_filter, Config::default());
     info!("Starting croni");
     info!("==============");
-    info!("Log level: {}", &log_level);
+    info!("Log level: {}", &level_filter);
     let crontab_path = env::var("CRONTAB").expect("Crontab not found");
     info!("Crontab: {}", &crontab_path);
     let crontab = read_crontab(&crontab_path);
-    let mut sched = JobScheduler::new();
+    let sched = JobScheduler::new().await.unwrap();
     for line in crontab{
-        let (schedule_str, command) = get_data(&line);
-        let async_job = Job::new(&schedule_str, move |_, _| {
+        let (schedule, command) = get_data(&line);
+        let async_job = Job::new(schedule.as_str(), move |_, _| {
             let command_clone: String = command.clone();
             tokio::spawn(async move{
                 let result = call(&command_clone).await;
                 debug!("{}", result);
             });
         }).unwrap();
-        let _result = sched.add(async_job);
+        let _result = sched.add(async_job).await;
     };
-    let _result = sched.start().await;
+    let result = sched.start().await.unwrap();
+    match result.await{
+        Ok(_) => info!("Start ok"),
+        Err(e) => error!("Cant start. {}", e),
+    }
 }
 
 async fn call(command_line: &str) -> String{
