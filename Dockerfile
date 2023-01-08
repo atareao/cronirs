@@ -1,30 +1,24 @@
 ###############################################################################
 ## Builder
 ###############################################################################
-FROM rust:latest AS builder
+FROM rust:1.64 AS builder
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
-RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM" > /log
+RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM"
 
 LABEL maintainer="Lorenzo Carbonell <a.k.a. atareao> lorenzo.carbonell.cerezo@gmail.com"
 
 COPY ./platform.sh /platform.sh
 RUN /platform.sh
 
-ENV RUST_MUSL_CROSS_TARGET=$TARGETPLATFORM
+ENV RUST_MUSL_CROSS_TARGET="$(cat /.target)"
+ENV OPENSSL_LIB_DIR="$(cat /.libdir)"
+ENV OPENSSL_INCLUDE_DIR="/usr/include/openssl"
 
-RUN rustup target add $(cat /.target) && \
-    apt-get update && \
-    apt-get install -y \
+RUN rustup target add "$(cat /.target)"
+RUN apt-get install -y \
         --no-install-recommends\
-        pkg-config \
-        musl-tools \
-        build-essential \
-        cmake \
-        musl-dev \
-        pkg-config \
-        libssl-dev \
         && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
