@@ -1,17 +1,23 @@
 use tokio_cron_scheduler::{JobScheduler, Job};
 use std::{env, fs, collections::VecDeque, str::FromStr};
-use tokio::process::Command;
-use simplelog::{SimpleLogger, Config, LevelFilter};
-use log::{info, debug, error};
+use tokio::{
+    process::Command,
+    time::{sleep, Duration}
+};
+use tracing_subscriber::{EnvFilter,
+    layer::SubscriberExt, util::SubscriberInitExt};
+use tracing::{debug, info, error};
 
 #[tokio::main]
 async fn main() {
     let log_level = env::var("LOG_LEVEL").unwrap_or("info".to_string());
-    let level_filter: LevelFilter = LevelFilter::from_str(&log_level).unwrap_or(LevelFilter::Info);
-    let _ = SimpleLogger::init(level_filter, Config::default());
+    tracing_subscriber::registry()
+        .with(EnvFilter::from_str(&log_level).unwrap())
+        .with(tracing_subscriber::fmt::layer())
+        .init();
     info!("Starting croni");
     info!("==============");
-    info!("Log level: {}", &level_filter);
+    info!("Log level: {}", &log_level);
     let crontab_path = env::var("CRONTAB").expect("Crontab not found");
     info!("Crontab: {}", &crontab_path);
     let crontab = read_crontab(&crontab_path);
@@ -27,9 +33,13 @@ async fn main() {
         }).unwrap();
         let _result = sched.add(async_job).await;
     };
-    let result = sched.start().await.unwrap();
-    match result.await{
-        Ok(_) => info!("Start ok"),
+    match sched.start().await{
+        Ok(_) => {
+            info!("Start ok");
+            loop{
+                sleep(Duration::from_secs(10)).await
+            }
+        },
         Err(e) => error!("Cant start. {}", e),
     }
 }
