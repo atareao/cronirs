@@ -5,14 +5,12 @@ version := `git tag -l  | tail -n1`
 build:
     echo {{version}}
     echo {{name}}
-    docker build -t {{user}}/{{name}}:{{version}} .
-
-tag:
-    docker tag {{user}}/{{name}}:{{version}} {{user}}/{{name}}:latest
+    docker build -t {{user}}/{{name}}:{{version}} \
+                 -t {{user}}/{{name}}:latest \
+                 .
 
 push:
-    docker push {{user}}/{{name}}:{{version}}
-    docker push {{user}}/{{name}}:latest
+    docker push {{user}}/{{name}} --all-tags
 
 buildx:
     #!/usr/bin/env bash
@@ -20,7 +18,9 @@ buildx:
     docker buildx build \
            --push \
            --platform linux/arm/v7,linux/arm64/v8,linux/amd64 \
-           --tag {{user}}/{{name}}:{{version}} .
+           --tag {{user}}/{{name}}:{{version}} \
+           --tag {{user}}/{{name}}:latest \
+           .
 
 run:
     docker run --rm \

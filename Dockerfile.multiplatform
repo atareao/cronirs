@@ -3,28 +3,31 @@
 ###############################################################################
 FROM rust:1.64 AS builder
 
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
+RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM"
+
 LABEL maintainer="Lorenzo Carbonell <a.k.a. atareao> lorenzo.carbonell.cerezo@gmail.com"
 
-RUN rustup target add x86_64-unknown-linux-musl && \
-    apt-get update && \
-    apt-get install -y \
+COPY ./platform.sh /platform.sh
+RUN /platform.sh
+
+ENV RUST_MUSL_CROSS_TARGET="$(cat /.target)"
+ENV OPENSSL_LIB_DIR="$(cat /.libdir)"
+ENV OPENSSL_INCLUDE_DIR="/usr/include/openssl"
+
+RUN rustup target add "$(cat /.target)"
+RUN apt-get install -y \
         --no-install-recommends\
-        pkg-config \
-        musl-tools \
-        build-essential \
-        cmake \
-        musl-dev \
-        pkg-config \
         && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-
 COPY Cargo.toml Cargo.lock ./
 COPY src src
 
-RUN cargo build --release --target x86_64-unknown-linux-musl && \
-    cp /app/target/x86_64-unknown-linux-musl/release/cronirs /app/cronirs
+RUN cargo build --release --target $(cat /.target) && \
+    cp /app/target/$(cat /.target)/release/cronirs /app/cronirs
 
 ###############################################################################
 ## Final image
