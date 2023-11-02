@@ -1,4 +1,4 @@
-use tokio_cron_scheduler::{JobScheduler, Job};
+use tokio_cron::{Job, Scheduler};
 use std::{env, fs, collections::VecDeque, str::FromStr};
 use tokio::{
     process::Command,
@@ -21,30 +21,20 @@ async fn main() {
     let crontab_path = env::var("CRONTAB").expect("Crontab not found");
     info!("Crontab: {}", &crontab_path);
     let crontab = read_crontab(&crontab_path);
-    let sched = JobScheduler::new().await.unwrap();
+    let mut sched = Scheduler::local();
     for line in crontab{
         let (schedule, command) = get_data(&line);
-        let async_job = Job::new(schedule.as_str(), move |_, _| {
-            let command_clone: String = command.clone();
-            tokio::spawn(async move{
-                let result = call(&command_clone).await;
-                debug!("{}", result);
-            });
-        }).unwrap();
-        let _result = sched.add(async_job).await;
+        sched.add(Job::new(schedule.as_str(), move || {
+            call(command.clone())
+        }));
     };
-    match sched.start().await{
-        Ok(_) => {
-            info!("Start ok");
-            loop{
-                sleep(Duration::from_secs(10)).await
-            }
-        },
-        Err(e) => error!("Cant start. {}", e),
-    }
+    info!("Start ok");
+    loop{
+        sleep(Duration::from_secs(10)).await;
+    };
 }
 
-async fn call(command_line: &str) -> String{
+async fn call(command_line: String){
     debug!("{}", &command_line);
     let mut cwa: VecDeque<&str> = command_line.split(" ").collect();
     let command = cwa.pop_front().unwrap();
@@ -55,11 +45,12 @@ async fn call(command_line: &str) -> String{
         .output()
         .await
         .expect(&format!("Failed to run {}", &command));
-    format!("Status: {}\nOutput: {}\nError: {}\n",
+    let output = format!("Status: {}\nOutput: {}\nError: {}\n",
         output.status,
         String::from_utf8_lossy(&output.stdout),
         String::from_utf8_lossy(&output.stderr)
-    )
+    );
+    debug!("Output: {}", output);
 }
 
 fn get_data(line: &str) -> (String, String){

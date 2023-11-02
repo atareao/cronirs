@@ -2,6 +2,9 @@ user    := "atareao"
 name    := `basename ${PWD}`
 version := `git tag -l  | tail -n1`
 
+default:
+    @just --list
+
 build:
     echo {{version}}
     echo {{name}}
