@@ -1,9 +1,14 @@
 ###############################################################################
 ## Builder
 ###############################################################################
-FROM rust:1.64 AS builder
+FROM rust:1.71 AS builder
 
 LABEL maintainer="Lorenzo Carbonell <a.k.a. atareao> lorenzo.carbonell.cerezo@gmail.com"
+
+ARG TARGET=x86_64-unknown-linux-musl
+ENV RUST_MUSL_CROSS_TARGET=$TARGET \
+    OPENSSL_LIB_DIR="/usr/lib/x86_64-linux-gnu" \
+    OPENSSL_INCLUDE_DIR="/usr/include/openssl"
 
 RUN rustup target add x86_64-unknown-linux-musl && \
     apt-get update && \
@@ -29,13 +34,14 @@ RUN cargo build --release --target x86_64-unknown-linux-musl && \
 ###############################################################################
 ## Final image
 ###############################################################################
-FROM alpine:3.17
+FROM alpine:3.18
 
-ENV USER=app
-ENV UID=10001
+ENV USER=app \
+    UID=10001
 
 RUN apk add --update --no-cache \
-            curl~=7.88 && \
+            tzdata~=2023c \
+            curl~=8.4 && \
     rm -rf /var/cache/apk && \
     rm -rf /var/lib/app/lists*
 
