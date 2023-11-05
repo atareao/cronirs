@@ -7,16 +7,17 @@ homepage = "https://atareao.es"
 readme = "README.md"
 description = "A simple, lightweight cron"
 repository = "https://github.com/atareao/cronirs"
-license = "MIT"
 license-file = "LICENSE"
-rust-version = "1.64"
+rust-version = "1.73"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+chrono = "0.4.31"
+time = { version = "0.3.30", features = ["macros"] }
 tokio = { version = "1.26", features = ["full"] }
 tokio-cron = "0.1.2"
 
 # log
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "local-time", "fmt"] }

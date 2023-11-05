@@ -1,23 +1,38 @@
 use tokio_cron::{Job, Scheduler};
-use std::{env, fs, collections::VecDeque, str::FromStr};
+use std::{env, fs, collections::VecDeque};
 use tokio::{
     process::Command,
     time::{sleep, Duration}
 };
 use tracing_subscriber::{EnvFilter,
-    layer::SubscriberExt, util::SubscriberInitExt};
-use tracing::{debug, info, error};
+    layer::SubscriberExt,
+    util::SubscriberInitExt,
+    fmt,
+    Layer,
+};
+use chrono::Local;
+use tracing::{debug, info};
 
 #[tokio::main]
 async fn main() {
-    let log_level = env::var("LOG_LEVEL").unwrap_or("info".to_string());
+    let time_offset = time::UtcOffset::from_whole_seconds(
+        Local::now()
+            .offset()
+            .local_minus_utc()
+    ).unwrap();
+    let timer_format = time::format_description::well_known::Iso8601::DEFAULT;
+    let log_layer = tracing_subscriber::fmt::layer()
+        .with_timer(fmt::time::OffsetTime::new(time_offset, timer_format))
+        .compact()
+        .with_level(true)
+        .with_thread_names(true)
+        .with_filter(EnvFilter::from_env("LOG_LEVEL"));
     tracing_subscriber::registry()
-        .with(EnvFilter::from_str(&log_level).unwrap())
-        .with(tracing_subscriber::fmt::layer())
+        .with(log_layer)
         .init();
     info!("Starting croni");
     info!("==============");
-    info!("Log level: {}", &log_level);
+    info!("Log level: {}", EnvFilter::from_env("LOG_LEVEL"));
     let crontab_path = env::var("CRONTAB").expect("Crontab not found");
     info!("Crontab: {}", &crontab_path);
     let crontab = read_crontab(&crontab_path);
