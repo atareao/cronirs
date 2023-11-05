@@ -28,7 +28,7 @@ buildx:
 run:
     docker run --rm \
                --init \
-               --name croni \
+               --name {{name}} \
                --init \
                --env-file .env \
                -v ${PWD}/crontab.txt:/app/crontab.txt \
@@ -37,9 +37,9 @@ run:
 sh:
     docker run --rm \
                -it \
-               --name croni \
+               --name {{name}} \
                --init \
-               --env-file croni.env \
+               --env-file .env \
                -v ${PWD}/crontab:/crontab \
                {{user}}/{{name}}:{{version}} \
                sh
