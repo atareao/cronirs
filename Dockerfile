@@ -1,7 +1,7 @@
 ###############################################################################
 ## Builder
 ###############################################################################
-FROM rust:1.73 AS builder
+FROM rust:1.76 AS builder
 
 LABEL maintainer="Lorenzo Carbonell <a.k.a. atareao> lorenzo.carbonell.cerezo@gmail.com"
 
@@ -34,14 +34,14 @@ RUN cargo build --release --target x86_64-unknown-linux-musl && \
 ###############################################################################
 ## Final image
 ###############################################################################
-FROM alpine:3.18
+FROM alpine:3.19
 
 ENV USER=app \
     UID=10001
 
 RUN apk add --update --no-cache \
-            tzdata~=2023c \
-            curl~=8.4 && \
+            tzdata~=2024 \
+            curl~=8.5 && \
     rm -rf /var/cache/apk && \
     rm -rf /var/lib/app/lists*
 
